@@ -6,11 +6,30 @@
 #include <EEPROMAnything.h>
 #include <ClickEncoder.h>
 #include <TimerOne.h>
+#include <ILI9341_t3.h>
+#include <gui-lib.h>
+
+#define TFT_DC      20
+#define TFT_CS      21
+#define TFT_RST    255  // 255 = unused, connect to 3.3V
+#define TFT_MOSI     7
+#define TFT_SCLK    14
+#define TFT_MISO    12
+ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
+RotaryGauge gauge0 = RotaryGauge(&tft); 
+RotaryGauge gauge1 = RotaryGauge(&tft); 
+RotaryGauge gauge2 = RotaryGauge(&tft); 
+RotaryGauge gauge3 = RotaryGauge(&tft); 
+RotaryGauge gauge4 = RotaryGauge(&tft); 
+RotaryGauge gauge5 = RotaryGauge(&tft); 
+RotaryGauge gauge6 = RotaryGauge(&tft); 
+RotaryGauge gauge7 = RotaryGauge(&tft); 
 
 struct VoiceItems{
   int note = -1;
   AudioSynthWaveform *waveform1;
   AudioEffectEnvelope *envelope1;
+  AudioFilterStateVariable *filter1;
 } ;
 
 ///////////////////OBJECTS/////////////////////////
@@ -36,6 +55,9 @@ class VoiceHandler {
         voices[idx]->envelope1->attack(50);
         voices[idx]->envelope1->decay(50);
         voices[idx]->envelope1->release(250);
+
+        voices[0]->filter1->frequency(5000);
+        voices[0]->filter1->resonance(2);
       }
       //voices[0]->envelope1->noteOn();
   
@@ -48,7 +70,7 @@ class VoiceHandler {
 
       for (int idx = 0; idx < maxVoices; idx++) {
         Serial.println("Voice "+(String)idx+":");
-//        Serial.println((String) voices[idx]->note);
+        Serial.println((String) voices[idx]->note);
         if(voices[idx]->note == -1 && !isNoteOn(noteVal)){
           voices[idx]->note = noteVal;
           voices[idx]->waveform1->frequency(freq);
@@ -116,58 +138,86 @@ int sensorPin = A0;
 int sensorValue = 0;
 
 // GUItool: begin automatically generated code
+#include <Audio.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <SD.h>
+#include <SerialFlash.h>
+
 // GUItool: begin automatically generated code
-// GUItool: begin automatically generated code
-AudioSynthWaveform       voice1waveform1; //xy=379.14284896850586,437.428560256958
+AudioSynthWaveform       voice1waveform1; //xy=387.7143020629883,381.7142581939697
 AudioSynthWaveform       voice0waveform1; //xy=552.0000171661377,301.71429443359375
-AudioEffectEnvelope      voice1envelope1; //xy=729.2857131958008,474.428560256958
+AudioEffectEnvelope      voice1envelope1; //xy=701.2857055664062,442.4285583496094
 AudioEffectEnvelope      voice0envelope1; //xy=735.0000171661377,298.71429443359375
-AudioMixer4              mixer1;         //xy=928.0000171661377,441.71429443359375
-AudioOutputI2S           i2s1;           //xy=1202.5714359283447,325.8571581840515
+AudioMixer4              mixer1;         //xy=902,394.71429443359375
+AudioFilterStateVariable filter1;        //xy=1048,400
+AudioOutputI2S           i2s1;           //xy=1276.5714111328125,329.8571472167969
 AudioConnection          patchCord1(voice1waveform1, voice1envelope1);
 AudioConnection          patchCord2(voice0waveform1, voice0envelope1);
 AudioConnection          patchCord3(voice1envelope1, 0, mixer1, 1);
 AudioConnection          patchCord4(voice0envelope1, 0, mixer1, 0);
-AudioConnection          patchCord5(mixer1, 0, i2s1, 0);
-AudioConnection          patchCord6(mixer1, 0, i2s1, 1);
-
-//// GUItool: end automatically generated code
-//
-//AudioOutputI2S           i2s1;           //xy=565,241
-//
-//AudioSynthWaveform       voice0waveform1;      //xy=188,240
-//AudioEffectEnvelope      voice0envelope1;      //xy=371,237
-//AudioConnection          patchCord1(voice0waveform1, voice0envelope1);
-//AudioConnection          patchCord2(voice0envelope1, 0, i2s1, 0);
-//AudioConnection          patchCord3(voice0envelope1, 0, i2s1, 1);
-//
-//AudioSynthWaveform       voice1waveform1;      //xy=188,240
-//AudioEffectEnvelope      voice1envelope1;      //xy=371,237
-//AudioConnection          patchCord4(voice1waveform1, voice1envelope1);
-//AudioConnection          patchCord5(voice1envelope1, 0, i2s1, 0);
-//AudioConnection          patchCord6(voice1envelope1, 0, i2s1, 1);
+AudioConnection          patchCord5(mixer1, 0, filter1, 0);
+AudioConnection          patchCord6(filter1, 0, i2s1, 0);
+AudioConnection          patchCord7(filter1, 0, i2s1, 1);
+// GUItool: end automatically generated code
 
 AudioControlSGTL5000     audioShield;     //xy=586,175
 
 // GUItool: end automatically generated code
 
 typedef struct{
+  String Label;
   String id;
-  int initVal;
+  int defaultVal;
   int val;
   int minVal;
   int maxVal;
+  int type;
 } VoiceParameter;
 
 
 class VoiceParameters{
   public:
-    VoiceParameter osc1_type = {"osc1_type",0,0,0,127};
+    int maxIdx=10;
+    VoiceParameter p[100];
+//    VoiceParameter osc1_type = {"osc1_type","osc1_type",0,0,0,127,0};
+//    VoiceParameter filt1_freq = {"Freq","filt1_freq",0,0,0,127,0};
+
+    VoiceParameters(){
+      p[0] = {"osc1_type","osc1_type",0,0,0,127,0};
+      p[1] = {"Freq","fildfht1_freq",0,0,0,127,0};
+      p[2] = {"Freq","ddfjgjfgh",0,0,0,127,0};
+      p[3] = {"Freq","fildfhdfht1_freq",0,0,0,127,0};
+      p[4] = {"Freq","fildfhdft1_freq",0,0,0,127,0};
+      p[5] = {"Freq","filsdgsht1_freq",0,0,0,127,0};
+      p[6] = {"Freq","filt1dfhdf_freq",0,0,0,127,0};
+      p[7] = {"Freq","fildfhfdht1_freq",0,0,0,127,0};
+      p[8] = {"Freq","filt1_freq",0,0,0,127,0};
+      p[9] = {"Freq","filtdfhdf1_freq",0,0,0,127,0};
+      p[10] = {"Freq","filtdfhfdh1_freq",0,0,0,127,0};
+
+    }
+
+    VoiceParameter * getById(String id){
+      for(int idx=0;idx<maxIdx;idx++){
+        if( p[idx].id == id){
+          return &p[idx];
+        }
+      }
+    }
+    
+//    void addParam(VoiceParameter vp,int idx){
+//      p[idx]=vp;
+//    }
 };
 
-void *voiceList[]={  };
-VoiceItems voiceItems0= {-1, &voice0waveform1, &voice0envelope1};
-VoiceItems voiceItems1= {-1, &voice1waveform1, &voice1envelope1};
+//void *voiceList[]={  };
+VoiceParameters voiceParams;
+//VoiceParameter osc1_type = {"osc1_type","osc1_type",0,0,0,127,0}; 
+//VoiceParameter filt1_freq = {"Freq","filt1_freq",0,0,0,127,0};
+
+VoiceItems voiceItems0= {-1, &voice0waveform1, &voice0envelope1, &filter1};
+VoiceItems voiceItems1= {-1, &voice1waveform1, &voice1envelope1, &filter1};
 
 //VoiceItems voiceItems;
 
@@ -229,7 +279,6 @@ int defaultPatch2[50][3]={};
 int patchLibrary[64][50][3]={};
 int currentPatchIdx = 0;
 
-VoiceParameters voiceParams;
 
 /////////END: VOICE PROPERTIES /////////
 
@@ -272,6 +321,9 @@ void handleEncoderEvent( ){
           encPrevValList[encIdx] = currVal;
           Serial.print("Encoder "+(String)encIdx+" Value: ");
           Serial.println(currVal); 
+
+          gauge1.drawValue(currVal,0,127);
+
 //          Serial.print("filterFreq: ");
 //          //filterFreq = log10(1+((float) last)/32);
 //          filterFreq = pow((float) last, 1.5);
@@ -282,22 +334,22 @@ void handleEncoderEvent( ){
         } 
 
         //CLICK EVENT
-//        encoderList[encIdx]->setDoubleClickEnabled(true);
-//        ClickEncoder::Button b = encoderList[encIdx]->getButton();
-//        
-//        if (b != ClickEncoder::Open) {
-//        Serial.print("Button "+(String)encIdx+": ");
-//        #define VERBOSECASE(label) case label: Serial.println(#label); break;
-//        switch (b) {
-//          VERBOSECASE(ClickEncoder::Pressed);
-//          VERBOSECASE(ClickEncoder::Held)
-//          VERBOSECASE(ClickEncoder::Released)
-//          VERBOSECASE(ClickEncoder::Clicked)
-//          case ClickEncoder::DoubleClicked:
-//              Serial.println("ClickEncoder::DoubleClicked"); 
-//            break;
-//        }
-//      }
+        encoderList[encIdx]->setDoubleClickEnabled(true);
+        ClickEncoder::Button b = encoderList[encIdx]->getButton();
+        
+        if (b != ClickEncoder::Open) {
+        Serial.print("Button "+(String)encIdx+": ");
+        #define VERBOSECASE(label) case label: Serial.println(#label); break;
+        switch (b) {
+          VERBOSECASE(ClickEncoder::Pressed);
+          VERBOSECASE(ClickEncoder::Held)
+          VERBOSECASE(ClickEncoder::Released)
+          VERBOSECASE(ClickEncoder::Clicked)
+          case ClickEncoder::DoubleClicked:
+              Serial.println("ClickEncoder::DoubleClicked"); 
+            break;
+        }
+      }
     }
 }
 
@@ -310,6 +362,26 @@ void setup() {
     usbMIDI.setHandleNoteOn(handleNoteOn);
     usbMIDI.setHandleNoteOff(handleNoteOff);
 
+    tft.begin();
+    tft.setRotation(3); 
+    tft.fillScreen(ILI9341_BLACK);
+    tft.setCursor(10 , 110);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.setTextSize(5);
+    tft.println("OliouSynth");
+    delay(3000);
+    tft.fillScreen(ILI9341_BLACK);
+
+    gauge0.drawFrame(40,45);    
+    gauge1.drawFrame(120,45);
+    gauge2.drawFrame(200,45);
+    gauge3.drawFrame(280,45);
+    gauge4.drawFrame(40,165);
+    gauge5.drawFrame(120,165); 
+    gauge6.drawFrame(200,165);
+    gauge7.drawFrame(280,165);
+
+    
       // Set up
     AudioMemory(8);
     audioShield.enable();
@@ -338,28 +410,35 @@ void setup() {
 //    defaultPatch[osc1_type][minVal]=0;
 //    defaultPatch[osc1_type][maxVal]=127;
 
-     //voiceParams.osc1_type.id = "bimbol18";
+//     voiceParams.p[10].val = 121;
      
      //memcpy(patchLibrary[0], defaultPatch, sizeof(defaultPatch));
 //    memcpy(patchLibrary[0], defaultPatch, sizeof(defaultPatch));
 //
   
-//    memcpy(patchLibrary[1], defaultPatch, sizeof(defaultPatch));
+//    memcpy(patchLibrary[1], voiceParams, sizeof(voiceParams));
 
 //      paramIdxs indexes;
-//     EEPROM_writeAnything(0, defaultPatch);
-//      VoiceParameter testParam2;
+//     EEPROM_writeAnything(0, voiceParams);
+//     VoiceParameters testParam2;
     // Load Patch Library in memory 
 //      Serial.println(defaultPatch[indexes.osc1_type][0]);
+//    Serial.println((String) testParam2.filt1_freq.val);
 
-//      EEPROM_readAnything(0, defaultPatch);
+//      EEPROM_readAnything(0, voiceParams);
 
 //      Serial.println((String) defaultPatch[indexes.osc1_type][0]);
+//     VoiceParameter *tp = voiceParams.getById("filt1_freq");
+    Serial.println((String) voiceParams.getById("filt1_freq")->maxVal);
+//        Serial.println((String) voiceParams.p[10].val);
+
+                Serial.println("R");
+
 
 
     // Initialise Encoders
     encoderList[0] = new ClickEncoder(1,2,3);
-    encoderList[1] = new ClickEncoder(4  ,5,6);
+    encoderList[1] = new ClickEncoder(4,5,6);
 //    encoderList[2] = new ClickEncoder(7,8,10);
 //    encoderList[3] = new ClickEncoder(14,15,16);
 //    encoderList[4] = new ClickEncoder(21,22,23);
