@@ -24,7 +24,6 @@ RotaryGauge gauge4 = RotaryGauge(&tft);
 RotaryGauge gauge5 = RotaryGauge(&tft); 
 RotaryGauge gauge6 = RotaryGauge(&tft); 
 RotaryGauge gauge7 = RotaryGauge(&tft); 
-
 RotaryGauge *gauges[8]={
   &gauge0,
   &gauge1,
@@ -34,6 +33,25 @@ RotaryGauge *gauges[8]={
   &gauge5,
   &gauge6,
   &gauge7
+};
+
+uiSwitch switch0 = uiSwitch(&tft); 
+uiSwitch switch1 = uiSwitch(&tft); 
+uiSwitch switch2 = uiSwitch(&tft); 
+uiSwitch switch3 = uiSwitch(&tft); 
+uiSwitch switch4 = uiSwitch(&tft); 
+uiSwitch switch5 = uiSwitch(&tft); 
+uiSwitch switch6 = uiSwitch(&tft); 
+uiSwitch switch7 = uiSwitch(&tft); 
+uiSwitch *uiSwitches[8]={
+  &switch0,
+  &switch1,
+  &switch2,
+  &switch3,
+  &switch4,
+  &switch5,
+  &switch6,
+  &switch7
 };
 
 struct VoiceItems{
@@ -46,7 +64,7 @@ struct VoiceItems{
 
 ///////////////////OBJECTS/////////////////////////
 typedef struct{
-  String Label;
+  String label;
   String id;
   int defaultVal;
   int val;
@@ -56,6 +74,7 @@ typedef struct{
   int mode;
   int encoder; 
   int ccnum;
+  String valueLabel[10];
 } VoiceParameter;
 
 class VoiceParameters{
@@ -66,9 +85,9 @@ class VoiceParameters{
 //    VoiceParameter filt1_freq = {"Freq","filt1_freq",0,0,0,127,0};
 
     VoiceParameters(){
-      p[0] = {"osc1_type","osc1_type",0,0,0,127,0,0,0,45};
-      p[1] = {"Freq","filt1_freq",    0,0,0,127,0,2,0,47};
-      p[2] = {"Freq","filt1_type",    0,0,0,  2,1,2,0,47};
+      p[0] = {"osc1_type","osc1_type",0,0,0,127,0,1,0,45};
+      p[1] = {"Freq","filt1_freq",    0,0,0,127,0,0,0,47};
+      p[2] = {"Type","filt1_type",    0,0,0,  2,1,0,0,49,{"Low","Band","High"}}; 
 //      p[3] = {"Freq","fildfhdfht1_freq",0,0,0,127,0};
 //      p[4] = {"Freq","fildfhdft1_freq",0,0,0,127,0};
 //      p[5] = {"Freq","filsdgsht1_freq",0,0,0,127,0};
@@ -98,6 +117,7 @@ class VoiceParameters{
           }
         }
       }
+      return NULL;
     }
     
 //    void addParam(VoiceParameter vp,int idx){
@@ -135,7 +155,7 @@ class VoiceHandler {
 
     void update(){
         float freq = pow((float) params->getById("filt1_freq")->val, 2.05);
-        Serial.println("freq: "+(String) freq);
+        //Serial.println("freq: "+(String) freq);
         voices[0]->filter1->frequency(freq);
         voices[0]->filter1->resonance(2);
 
@@ -322,9 +342,9 @@ int defaultPatch2[50][3]={};
 int patchLibrary[64][50][3]={};
 int currentPatchIdx = 0;
 
+int uiMode=0;
 
 /////////END: VOICE PROPERTIES /////////
-
 
 VoiceHandler voiceHandler(&voiceParams);
 
@@ -354,6 +374,45 @@ void handleNoteOff(byte inChannel, byte inNumber, byte inVelocity)
     voiceHandler.noteOff( inNumber);
 }
 
+void initGUI(){
+    gauge0.drawFrame(40,40);    
+    gauge1.drawFrame(120,40);
+    gauge2.drawFrame(200,40);
+    gauge3.drawFrame(280,40);
+    gauge4.drawFrame(40,160);
+    gauge5.drawFrame(120,160); 
+    gauge6.drawFrame(200,160);
+    gauge7.drawFrame(280,160);
+
+    switch0.drawFrame(40,90);
+    switch1.drawFrame(120,90);
+//    switch2.setPosition(200);
+//    switch3.setPosition(280);
+//    switch4.setPosition(40);
+//    switch5.setPosition(120);
+//    switch6.setPosition(200);
+//    switch7.setPosition(280);
+
+    
+    refreshGUI();
+}
+
+void refreshGUI(){
+    for (int encIdx = 0; encIdx < maxEncNum; encIdx++) {
+      VoiceParameter *param = voiceParams.getByModeEncType(uiMode, encIdx, 0);  
+      if(param != NULL){
+        gauges[encIdx]->drawLabel(param->label);  
+        gauges[encIdx]->drawValue(param->val, 
+                                  param->minVal, 
+                                  param->maxVal);
+      }
+      param = voiceParams.getByModeEncType(uiMode, encIdx, 1);  
+      if(param != NULL){
+        uiSwitches[encIdx]->draw(param->label, param->valueLabel[param->val], false, true, true);
+      }
+    }  
+}
+
 void handleEncoderEvent( ){
     for (int encIdx = 0; encIdx < maxEncNum; encIdx++) {
       
@@ -361,11 +420,12 @@ void handleEncoderEvent( ){
       encCurrValList[encIdx] += encoderList[encIdx]->getValue();
       int currVal = encCurrValList[encIdx]; 
       int prevVal = encPrevValList[encIdx];
+
       if (currVal != prevVal) {
           
           Serial.print("Encoder "+(String)encIdx+" Value: ");
           Serial.println(currVal); 
-          VoiceParameter *param = voiceParams.getByModeEncType(2, encIdx, 0);
+          VoiceParameter *param = voiceParams.getByModeEncType(uiMode, encIdx, 0);
           
           if(param->type == 0){
             if(currVal > prevVal && param->val < param->maxVal){
@@ -376,9 +436,9 @@ void handleEncoderEvent( ){
             }
             Serial.println((String) param->id);
             Serial.println((String) param->val);
-  //          int val;
-  //          int minVal;
-  //          int maxVal;
+            int val;
+            int minVal;
+            int maxVal;
             voiceHandler.update();
             gauges[encIdx]->drawValue(param->val, 
                                       param->minVal, 
@@ -394,37 +454,42 @@ void handleEncoderEvent( ){
           
 //          voice1filter.frequency(filterFreq);
           encPrevValList[encIdx] = currVal;
-        } 
-
-        //CLICK EVENT
-        encoderList[encIdx]->setDoubleClickEnabled(true);
-        ClickEncoder::Button b = encoderList[encIdx]->getButton();
-        
-        if (b != ClickEncoder::Open) {
-          Serial.print("Button "+(String)encIdx+": ");
-          #define VERBOSECASE(label) case label: Serial.println(#label); break;
-          switch (b) {
-            VERBOSECASE(ClickEncoder::Pressed);
-            VERBOSECASE(ClickEncoder::Held)
-            VERBOSECASE(ClickEncoder::Released)
-            VERBOSECASE(ClickEncoder::Clicked)
-            case ClickEncoder::DoubleClicked:
-                Serial.println("ClickEncoder::DoubleClicked"); 
-              break;
+        } else {
+          //CLICK EVENT
+          encoderList[encIdx]->setDoubleClickEnabled(true);
+          ClickEncoder::Button b = encoderList[encIdx]->getButton();
+          
+          if (b != ClickEncoder::Open) {
+            Serial.print("Button "+(String)encIdx+": ");
+            #define VERBOSECASE(label) case label: Serial.println(#label); break;
+            switch (b) {
+              VERBOSECASE(ClickEncoder::Pressed);
+              VERBOSECASE(ClickEncoder::Held)
+              VERBOSECASE(ClickEncoder::Released)
+              VERBOSECASE(ClickEncoder::Clicked)
+              case ClickEncoder::DoubleClicked:
+                  Serial.println("ClickEncoder::DoubleClicked"); 
+                break;
+            }
+            VoiceParameter *param = voiceParams.getByModeEncType(uiMode, encIdx, 1);
+            if(param != NULL){
+              if( param->val <= param->maxVal){
+                param->val++;
+              }
+              if(param->val > param->maxVal){
+                param->val = param->minVal;
+              }
+              Serial.println((String) param->id);
+              Serial.println((String) param->val);
+    //          Serial.println((String) param->valLabels[0]);
+              voiceHandler.update();
+              uiSwitches[encIdx]->draw(param->label, param->valueLabel[param->val], false, true, true);
+            }
           }
-          VoiceParameter *param = voiceParams.getByModeEncType(2, encIdx, 1);
-          if( param->val <= param->maxVal){
-            param->val++;
-          }
-          if(param->val > param->maxVal){
-            param->val = param->minVal;
-          }
-          Serial.println((String) param->id);
-          Serial.println((String) param->val);
-          voiceHandler.update();
         }
     }
 }
+
 
 unsigned long last_time = millis();
 
@@ -444,16 +509,6 @@ void setup() {
     tft.println("OliouSynth");
     delay(3000);
     tft.fillScreen(ILI9341_BLACK);
-
-    gauge0.drawFrame(40,45);    
-    gauge1.drawFrame(120,45);
-    gauge2.drawFrame(200,45);
-    gauge3.drawFrame(280,45);
-    gauge4.drawFrame(40,165);
-    gauge5.drawFrame(120,165); 
-    gauge6.drawFrame(200,165);
-    gauge7.drawFrame(280,165);
-
     
       // Set up
     AudioMemory(8);
@@ -499,16 +554,17 @@ void setup() {
 //      Serial.println(defaultPatch[indexes.osc1_type][0]);
 //    Serial.println((String) testParam2.filt1_freq.val);
 
-      EEPROM_readAnything(0, voiceParams);
+//      EEPROM_readAnything(0, voiceParams);
       voiceHandler.update();
 //      Serial.println((String) defaultPatch[indexes.osc1_type][0]);
 //     VoiceParameter *tp = voiceParams.getById("filt1_freq");
 //    Serial.println((String) voiceParams.getByModeEncType(0,1,1)->id);
-//        Serial.println((String) voiceParams.p[10].val);
+        Serial.println((String) voiceParams.p[2].label);
 
-                Serial.println("R");
+          Serial.println("RRR");
 
-
+//    VoiceParameter *param = voiceParams.getByModeEncType(0, 0, 1);
+//    Serial.println((String) param->label);
 
     // Initialise Encoders
     encoderList[0] = new ClickEncoder(1,2,3);
@@ -527,7 +583,7 @@ void setup() {
     AudioProcessorUsageMaxReset();
     AudioMemoryUsageMaxReset();
 
-    
+    initGUI();
 
     Serial.println("##### OliouSynth #####");
 }
@@ -576,9 +632,9 @@ void loop() {
 ////        ClickEncoder *tempEnc = encoderList[0];
 //      //Serial.println(encoderList[0]->getValue()); 
 
-      EEPROM_writeAnything(0, voiceParams);
+//      EEPROM_writeAnything(0, voiceParams);
       
-      EEPROM_readAnything(0, voiceParams);
+//      EEPROM_readAnything(0, voiceParams);
 //      
       Serial.print("Proc = ");
       Serial.print(AudioProcessorUsage());
