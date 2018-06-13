@@ -76,8 +76,8 @@ void greenBtn()
 unsigned long last_time = millis();
 
 RotaryGauge gauge1 = RotaryGauge(&tft); 
-uiSwitch switch1 = uiSwitch(&tft); 
-
+//uiSwitch switch1 = uiSwitch(&tft); 
+horizontalGauge gauge =   horizontalGauge(&tft); 
 
 void setup(void)
 {
@@ -95,8 +95,8 @@ void setup(void)
   tft.setRotation(3); 
   redBtn();
 
-  switch1.draw(""," LP ",false,true,false);
-  
+//  switch1.draw(""," LP ",false,true,false);
+   gauge.draw("Filter",64,0,127);
 }
 
 void loop()
