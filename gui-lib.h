@@ -134,7 +134,12 @@ class uiSwitch{
         tft->fillRect(centerX-width/2, centerY, width, 22,  borderColor);
     }
     
+    void hideFrame(){
+        tft->fillRect(centerX-width/2, centerY-22, width, 44,  invertColor);
+    }
+    
     void draw(String label, String value,bool underline, bool showBorder, bool showBkg){
+        tft->setTextSize(2);
         drawFrame(centerX, centerY);
         tft->setTextColor(color);
         tft->setCursor(centerX-(12*(label.length())/2),centerY-19);
@@ -146,6 +151,61 @@ class uiSwitch{
 };
 
 
+class HzGauge{
+    ILI9341_t3 *tft;
+    int centerX = 60;
+    int centerY = 60;
+    int width = 76;
+    int colorA = ILI9341_WHITE;
+    int colorB = ILI9341_BLACK;
+    int gaugeColor = ILI9341_BLUE;
+    
+public:
+    HzGauge(ILI9341_t3 *ptft): tft(ptft){}
+    
+    void drawFrame(int cX, int cY){
+        centerX=cX;
+        centerY=cY;
+        tft->fillRect(centerX-width/2, centerY-22, width, 44,  colorB);
+        tft->drawRect(centerX-width/2, centerY-22, width, 22,  colorA);
+        tft->fillRect(centerX-width/2, centerY, width, 22,  colorA);
+    }
+    
+    void hideFrame(){
+        tft->fillRect(centerX-width/2, centerY-22, width, 44,  colorB);
+    }
+    
+    void draw(String label, int val, int minVal, int maxVal, String valLabel){
+//        drawFrame(centerX, centerY);
+        tft->setTextSize(2);
+        String maxValString = (String) maxVal;
+        
+        
+        int valRange = abs(maxVal-minVal);
+        int valWidth = (width-3)*val/valRange;
+        Serial.println(valWidth);
+        tft->fillRect(2+centerX-width/2, centerY-21, valWidth, 20,  gaugeColor);
+        tft->fillRect(2+centerX-width/2 +valWidth, centerY-21, width-valWidth-3, 20,  colorB);
+
+        if(valLabel == ""){
+            valLabel = (String) val;
+        }
+        
+        tft->fillRect(centerX-width/2, centerY, width, 22,  colorA);
+        tft->setTextColor(colorA);
+        tft->setCursor(centerX-(12*(label.length())/2)+1,centerY-19);
+        tft->println(label);
+        
+        tft->setTextColor(colorB);
+        tft->setCursor(centerX-(12*(valLabel.length())/2),centerY+3);
+        tft->println(valLabel);
+        
+        
+        //        for (int idx = minVal; idx <= val; idx++) {
+        //
+        //        }
+    }
+};
 
 
 //class uiSwitch{
