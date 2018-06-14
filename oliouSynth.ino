@@ -159,13 +159,8 @@ class VoiceHandler {
         voices[0]->envelope1->decay(50);
         voices[0]->envelope1->release(250);
 
-        
-        
         update("osc");  
         update("filt");  
-
-        voices[0]->waveform1->frequency(440);
-        voices[0]->envelope1->noteOn();
     }
 
     void update(String paramId){
@@ -251,7 +246,7 @@ class VoiceHandler {
 };
 
 /////////ENCODER VARIABLES/////////
-const int maxEncNum = 4;
+const int maxEncNum = 6;
 ClickEncoder *encoderList[maxEncNum]={};
 int encCurrValList[8]= {0,0,0,0,0,0,0,0}; 
 int encPrevValList[8]= {0,0,0,0,0,0,0,0}; 
@@ -314,49 +309,6 @@ const int maxVal = 2;
 /////////STOP: PARAM PROPERTIES /////////
 
 /////////START: VOICE PROPERTIES /////////
-
-typedef struct{
-  int osc1_type = 0;     
-  int osc1_wform = 1;     
-  int osc1_amp = 2;     
-  int osc1_offset = 3;     
-  int osc1_phase = 4;     
-  int osc1_pw = 5;     
-  int osc1_noise = 6;     
-  
-  int osc2_type = 10;     
-  int osc2_wform = 11;     
-  int osc2_amp = 12;     
-  int osc2_offset = 13;     
-  int osc2_phase = 14;     
-  int osc2_pw = 15;     
-  int osc2_noise = 16;      
-  
-  int flt_type = 20;     
-  int flt_reso = 21;     
-  int flt_vel = 22;         
-  int flt_env_mod = 23;     
-  int flt_env_a = 24;     
-  int flt_env_d = 25;     
-  int flt_env_s = 26;     
-  int flt_env_r = 27;     
-     
-  int amp_vel = 30;         
-  int amp_env_mod = 31;     
-  int amp_env_a = 32;     
-  int amp_env_d = 33;     
-  int amp_env_s = 34;     
-  int amp_env_r = 35;    
-  
-  int lfo_dest = 40;     
-  int lfo_freq = 41;    
-  int lfo_wform = 42;      
-  int lfo_amp = 43;     
-  int lfo_offset = 44;     
-  int lfo_phase = 45;     
-  int lfo_pw = 46;     
-  int lfo_keyon = 47;   
-} VoiceParamIdxs;
 
 int defaultPatch[50][3]={};
 int defaultPatch2[50][3]={};
@@ -611,14 +563,15 @@ void setup() {
 //    Serial.println((String) param->label);
 
     // Initialise Encoders
-    encoderList[0] = new ClickEncoder(1,2,3);
-    encoderList[1] = new ClickEncoder(4,5,6);
-    encoderList[2] = new ClickEncoder(23,24,25);
-    encoderList[3] = new ClickEncoder(26,27,28);
-//    encoderList[4] = new ClickEncoder(21,22,23);
-//    encoderList[5] = new ClickEncoder(33,34,35);
-//    encoderList[6] = new ClickEncoder(36,37,38);
-//    encoderList[7] = new ClickEncoder(27,28,29);
+    int encIdx=0;
+    encoderList[encIdx] = new ClickEncoder(1,2,3);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(4,5,6);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(24,25,26);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(26,27,28);encIdx++;
+//    encoderList[encIdx] = new ClickEncoder(21,22,23);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(33,34,35);encIdx++;
+//    encoderList[encIdx] = new ClickEncoder(36,37,38);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(30,31,32);encIdx++;
     Timer1.initialize(1000);
     Timer1.attachInterrupt(timerIsr); 
     last = -1;
