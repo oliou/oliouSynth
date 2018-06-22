@@ -4,7 +4,7 @@
 #include <SD.h>
 #include <SerialFlash.h>
 #include <EEPROMAnything.h>
-#include <ClickEncoder.h>
+#include <ClickEncoder.h>  
 #include <TimerOne.h>
 #include <ILI9341_t3.h>
 #include <gui-lib.h>
@@ -86,11 +86,11 @@ class VoiceParameters{
 
     VoiceParameters(){
       int idx = 0;
-      p[idx] = {"WaveF","osc1_waveform",    0,  0,0,  8,1,0,0,45,{"Sine","Saw","Square","Tri","Rand","Pulse","SawRev","SplHld","TriVar"}}; idx++;
-      p[idx] = {"Pitch","osc1_pitch",       0, 64,0,127,0,0,0,45,{""}};idx++;
-      p[idx] = {"Fine","osc1_fine",         0, 64,0,127,0,0,1,45,{""}};idx++;
-      p[idx] = {"PhMod","osc1_PhaseMode",    0, 63,0,127,0,0,2,45,{""}};idx++;
-      p[idx] = {"Level","osc1_level",       0,127,0,127,0,0,3,45,{""}};idx++;
+      p[idx] = {"WaveF","osc1_waveform",        0,  0,0,  8,0,0,4,45,{"Sine","Saw","Square","Tri","Rand","Pulse","SawRev","SplHld","TriVar"}}; idx++;
+      p[idx] = {"Pitch","osc1_pitch",           0, 64,0,127,0,0,0,45,{""}};idx++;
+      p[idx] = {"Fine","osc1_fine",             0, 64,0,127,0,0,1,45,{""}};idx++;
+      p[idx] = {"PulseWd","osc1_pulseWidth",    0, 63,0,127,0,0,2,45,{""}};idx++;
+      p[idx] = {"Amp","osc1_amp",               0,127,0,127,0,0,3,45,{""}};idx++;
 
 //      p[0] = {"osc1_type","osc1_type",0,0,0,127,0,1,0,45};
 //      p[0] = {"osc1_type","osc1_type",0,0,0,127,0,1,0,45};
@@ -165,7 +165,15 @@ class VoiceHandler {
 
     void update(String paramId){
         if(paramId.indexOf("osc") >= 0){
+          VoiceParameter *param;
+          
           voices[0]->waveform1->begin(params->getById("osc1_waveform")->val);
+          
+          param = params->getById("osc1_pulseWidth");
+          voices[0]->waveform1->pulseWidth(  (float) param->val / param->maxVal );
+
+          param = params->getById("osc1_amp");
+          voices[0]->waveform1->amplitude((float) param->val / param->maxVal);
         }
 
         if(paramId.indexOf("filt") >= 0){
@@ -180,6 +188,8 @@ class VoiceHandler {
           voices[0]->mixer2->gain(2, (filterType==2)? 1:0); 
         }       
     }
+
+    
 
     void noteOn(int noteVal, int veloVal ) {
       note = noteVal;
@@ -246,7 +256,7 @@ class VoiceHandler {
 };
 
 /////////ENCODER VARIABLES/////////
-const int maxEncNum = 6;
+const int maxEncNum = 8;
 ClickEncoder *encoderList[maxEncNum]={};
 int encCurrValList[8]= {0,0,0,0,0,0,0,0}; 
 int encPrevValList[8]= {0,0,0,0,0,0,0,0}; 
@@ -409,8 +419,8 @@ void handleEncoderEvent( ){
 
       if (currVal != prevVal) {
           
-          Serial.print("Encoder "+(String)encIdx+" Value: ");
-//          Serial.println(currVal); 
+          Serial.println("Encoder "+(String)encIdx+" Value: ");
+          Serial.println(currVal); 
           VoiceParameter *param = voiceParams.getByModeEncType(uiMode, encIdx, 0);
           if(param != NULL){
             if(param->type == 0){
@@ -450,7 +460,7 @@ void handleEncoderEvent( ){
           ClickEncoder::Button b = encoderList[encIdx]->getButton();
           
           if (b != ClickEncoder::Open) {
-            Serial.print("Button "+(String)encIdx+": ");
+            Serial.println("Button "+(String)encIdx+": ");
             #define VERBOSECASE(label) case label: Serial.println(#label); break;
             switch (b) {
               VERBOSECASE(ClickEncoder::Pressed);
@@ -567,11 +577,13 @@ void setup() {
     encoderList[encIdx] = new ClickEncoder(1,2,3);encIdx++;
     encoderList[encIdx] = new ClickEncoder(4,5,6);encIdx++;
     encoderList[encIdx] = new ClickEncoder(24,25,26);encIdx++;
-    encoderList[encIdx] = new ClickEncoder(26,27,28);encIdx++;
-//    encoderList[encIdx] = new ClickEncoder(21,22,23);encIdx++;
-    encoderList[encIdx] = new ClickEncoder(33,34,35);encIdx++;
-//    encoderList[encIdx] = new ClickEncoder(36,37,38);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(27,28,29);encIdx++;
     encoderList[encIdx] = new ClickEncoder(30,31,32);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(33,34,35);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(36,37,38);encIdx++;
+    encoderList[encIdx] = new ClickEncoder(15,16,17);encIdx++;
+
+
     Timer1.initialize(1000);
     Timer1.attachInterrupt(timerIsr); 
     last = -1;
